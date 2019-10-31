@@ -1,4 +1,5 @@
 #CosmicMutantFilter
+# This version creates the third part pickle file from CosmicMutantExport.tsv dataset
 import re
 import pickle
 import sys
