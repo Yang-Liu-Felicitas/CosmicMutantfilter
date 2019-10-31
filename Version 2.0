@@ -1,0 +1,78 @@
+#CosmicMutantFilter
+# This version takes CosmicMutantExport.tsv and creates 3 pickle files of the parsed Dictionary geneDict{}
+import re
+import pickle
+import sys
+sys.setrecursionlimit(37433228)
+
+geneDict = {}
+bigSampleDict = {}
+
+#database entry must have a mutationAA listed
+
+def createDict(lines):
+
+   # create an lineArray variable for each line in a file
+   lineArray = lines.split('\t')
+
+   # store in variables the desired values
+   geneName = lineArray[0]
+   sampleID = lineArray[5]
+
+   mutationAA = lineArray[20]
+
+   # use only missense and nonsense SNVs
+   mutDesc = lineArray[21]
+   missense = "Substitution - Missense"
+   nonsense = "Substitution - Nonsense"
+   if not (mutDesc == missense or mutDesc == nonsense):
+      return;
+
+   FATHMMPrediction = lineArray[29]
+   primarySite = lineArray[7]
+   FATHMMScore = lineArray[30]
+
+   # the key for propertyDict is the property name
+   # the value for propertyDict is the property
+   propertyDict = {}
+   propertyDict["mutationAA"] = mutationAA
+   propertyDict["FATHMMPrediction"] = FATHMMPrediction
+   propertyDict["primarySite"] = primarySite
+   propertyDict["FATHMMScore"] = FATHMMScore
+
+   # the key for sampleDict is sampleID
+   # the values for sampleDict propertyDict
+   sampleDict = {}
+   sampleDict[sampleID] = propertyDict
+
+   # the key for geneDict is geneName
+   # the value for geneDict is sampleDict
+   # if key already exsists, add new value for the old key
+   if geneName in geneDict.keys():
+      geneDict[geneName] = geneDict[geneName], sampleDict
+   else:
+      geneDict[geneName] = sampleDict
+
+# function resets geneeDict
+def resetDict():
+   geneDict.clear()
+
+
+# open a TSV file , create a dictionary, store it in a pickle file into thirds
+with open ('CosmicMutantExport.tsv', 'r') as f:
+   index = 0
+   thirds = (12477742)
+   thirdsCounter = 0
+   for lines in f:
+      createDict(lines)
+      if (index == thirds):
+         filename = "geneDictCMFv" + str(thirdsCounter) + ".pkl"
+         with open(filename, 'wb') as handle:
+            pickle.dump(geneDict, handle, protocol = pickle.HIGHEST_PROTOCOL)
+         resetDict()
+         index = 0
+         thirdsCounter += 1
+      index += 1
+
+
+
